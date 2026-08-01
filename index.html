@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мосбиржа — график и анализ данных</title>
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js">
+    </script>
+    <style>
+        /* ===== RESET & BASE ===== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            background: #0b0e17;
+            color: #e8edf5;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .app {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            background: linear-gradient(145deg, #141b2b, #1a2335);
+            border-radius: 16px;
+            border: 1px solid #2a3a55;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .header-left .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4fc3f7, #29b6f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header-left .logo span {
+            font-weight: 300;
+            background: none;
+            -webkit-text-fill-color: #8899bb;
+            font-size: 18px;
+        }
+
+        .header-right {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            padding: 4px 14px;
+            border-radius: 20px;
+            background: #1a3a2a;
+            color: #66d99b;
+            border: 1px solid #2a6a4a;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .status-badge.loading {
+            background: #3a2a1a;
+            color: #f0b866;
+            border-color: #6a5a2a;
+        }
+
+        .status-badge.error {
+            background: #3a1a1a;
+            color: #f86666;
+            border-color: #6a2a2a;
+        }
+
+        /* ===== CONTROLS ===== */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 16px;
+            padding: 16px 20px;
+            background: #111927;
+            border-radius: 14px;
+            border: 1px solid #1e2d45;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .controls .group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .controls label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #8899bb;
+            letter-spacing: 0.3px;
+        }
+
+        .controls select,
+        .controls input[type="date"] {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid #253450;
+            background: #0d1422;
+            color: #e8edf5;
+            font-size: 14px;
+            font-weight: 500;
+            outline: none;
+            transition: border 0.2s, box-shadow 0.2s;
+            min-width: 130px;
+            cursor: pointer;
+        }
+
+        .controls select:focus,
+        .controls input[type="date"]:focus {
+            border-color: #4fc3f7;
+            box-shadow: 0 0 0 3px rgba(79, 195, 247, 0.15);
+        }
+
+        .controls select option {
+            background: #141b2b;
+            color: #e8edf5;
+        }
+
+        .controls .preset-btn {
+            padding: 7px 16px;
+            border-radius: 10px;
+            border: 1px solid #253450;
+            background: transparent;
+            color: #b0c4e0;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .controls .preset-btn:hover {
+            background: #1a2a44;
+            border-color: #3a5a7a;
+            color: #fff;
+        }
+
+        .controls .preset-btn.active {
+            background: #1a3a6a;
+            border-color: #4fc3f7;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(79, 195, 247, 0.1);
+        }
+
+        .controls .update-btn {
+            padding: 8px 28px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #1a6a8a, #29b6f6);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: inherit;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 16px rgba(41, 182, 246, 0.2);
+        }
+
+        .controls .update-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(41, 182, 246, 0.35);
+        }
+
+        .controls .update-btn:active {
+            transform: translateY(0);
+        }
+
+        .controls .update-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ===== CHART WRAPPER ===== */
+        .chart-wrapper {
+            background: #111927;
+            border-radius: 16px;
+            border: 1px solid #1e2d45;
+            padding: 16px 16px 8px 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        #chart {
+            width: 100%;
+            height: 540px;
+        }
+
+        .chart-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(17, 25, 39, 0.85);
+            border-radius: 16px;
+            z-index: 10;
+            gap: 16px;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.4s;
+        }
+
+        .chart-loading.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .chart-loading .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #1e2d45;
+            border-top-color: #29b6f6;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+
+        .chart-loading p {
+            font-size: 15px;
+            color: #8899bb;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ===== STATS ===== */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            padding: 16px 20px;
+            background: #111927;
+            border-radius: 14px;
+            border: 1px solid #1e2d45;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .stat-item .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #6a7a9a;
+            font-weight: 600;
+        }
+
+        .stat-item .value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #e8edf5;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-item .value.positive {
+            color: #66d99b;
+        }
+
+        .stat-item .value.negative {
+            color: #f86666;
+        }
+
+        .stat-item .sub {
+            font-size: 13px;
+            color: #8899bb;
+            font-weight: 400;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 820px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                padding: 14px 18px;
+            }
+            .header-right {
+                justify-content: space-between;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 14px 16px;
+            }
+            .controls .group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            #chart {
+                height: 380px;
+            }
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                padding: 12px 14px;
+            }
+            .stat-item .value {
+                font-size: 17px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            .header-left .logo {
+                font-size: 20px;
+            }
+            .header-left .logo span {
+                font-size: 14px;
+            }
+            .controls select,
+            .controls input[type="date"] {
+                min-width: 100px;
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            .controls .preset-btn {
+                font-size: 11px;
+                padding: 5px 12px;
+            }
+            #chart {
+                height: 300px;
+            }
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .stat-item .value {
+                font-size: 15px;
+            }
+        }
+
+        /* scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1422;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2a3a55;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a5a7a;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">MOEX<span> / анализ</span></div>
+            </div>
+            <div class="header-right">
+                <span class="status-badge" id="statusBadge">● онлайн</span>
+                <span style="font-size:13px; color:#6a7a9a;" id="updateTime">—</span>
+            </div>
+        </header>
+
+        <!-- CONTROLS -->
+        <div class="controls">
+            <div class="group">
+                <label for="stockSelect">📈 Инструмент</label>
+                <select id="stockSelect">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+
+            <div class="group">
+                <label>Период</label>
+                <button class="preset-btn" data-days="7">1Н</button>
+                <button class="preset-btn active" data-days="30">1М</button>
+                <button class="preset-btn" data-days="90">3М</button>
+                <button class="preset-btn" data-days="180">6М</button>
+                <button class="preset-btn" data-days="365">1Г</button>
+            </div>
+
+            <div class="group">
+                <label for="dateFrom">с</label>
+                <input type="date" id="dateFrom">
+                <label for="dateTo">по</label>
+                <input type="date" id="dateTo">
+            </div>
+
+            <button class="update-btn" id="updateBtn">⟳ Обновить</button>
+        </div>
+
+        <!-- CHART -->
+        <div class="chart-wrapper">
+            <div id="chart"></div>
+            <div class="chart-loading" id="chartLoading">
+                <div class="spinner"></div>
+                <p>Загрузка данных с Мосбиржи...</p>
+            </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats" id="stats">
+            <div class="stat-item">
+                <span class="label">Цена закрытия</span>
+                <span class="value" id="sLast">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Изменение</span>
+                <span class="value" id="sChange">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Максимум</span>
+                <span class="value" id="sHigh">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Минимум</span>
+                <span class="value" id="sLow">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Объём (шт)</span>
+                <span class="value" id="sVolume">—</span>
+            </div>
+            <div class="stat-item">
+                <span class="label">Средний объём</span>
+                <span class="value" id="sAvgVolume">—</span>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ============================================================
+        //  MOEX ISS API — single HTML page
+        // ============================================================
+
+        // ----- DOM refs -----
+        const stockSelect = document.getElementById('stockSelect');
+        const dateFrom = document.getElementById('dateFrom');
+        const dateTo = document.getElementById('dateTo');
+        const updateBtn = document.getElementById('updateBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const updateTime = document.getElementById('updateTime');
+        const chartLoading = document.getElementById('chartLoading');
+
+        const sLast = document.getElementById('sLast');
+        const sChange = document.getElementById('sChange');
+        const sHigh = document.getElementById('sHigh');
+        const sLow = document.getElementById('sLow');
+        const sVolume = document.getElementById('sVolume');
+        const sAvgVolume = document.getElementById('sAvgVolume');
+
+        const presetBtns = document.querySelectorAll('.preset-btn');
+
+        // ----- ECharts -----
+        let chart = null;
+
+        // ----- state -----
+        let currentTicker = 'SBER';
+        let currentData = []; // array of { date, open, high, low, close, volume }
+        let isFetching = false;
+        let securitiesList = [];
+
+        // ----- helpers -----
+        function formatDate(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function parseMoexDate(str) {
+            // "2025-01-15" or "2025-01-15 10:00:00"
+            const parts = str.split(' ');
+            const datePart = parts[0];
+            const [y, m, d] = datePart.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        function numberFormat(n, decimals = 2) {
+            if (n === undefined || n === null || isNaN(n)) return '—';
+            return Number(n).toFixed(decimals);
+        }
+
+        function formatVolume(n) {
+            if (n === undefined || n === null || isNaN(n)) return '—';
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+            return String(Math.round(n));
+        }
+
+        function setStatus(text, type = '') {
+            statusBadge.textContent = text;
+            statusBadge.className = 'status-badge' + (type ? ' ' + type : '');
+        }
+
+        function setLoading(loading) {
+            if (loading) {
+                chartLoading.classList.remove('hidden');
+                updateBtn.disabled = true;
+                setStatus('● загрузка...', 'loading');
+            } else {
+                chartLoading.classList.add('hidden');
+                updateBtn.disabled = false;
+                setStatus('● онлайн', '');
+            }
+            isFetching = loading;
+        }
+
+        // ----- date helpers -----
+        function getDateRange(days) {
+            const now = new Date();
+            const to = new Date(now);
+            const from = new Date(now);
+            from.setDate(from.getDate() - days);
+            return { from: formatDate(from), to: formatDate(to) };
+        }
+
+        function setDateInputs(from, to) {
+            dateFrom.value = from;
+            dateTo.value = to;
+        }
+
+        function getSelectedDates() {
+            return { from: dateFrom.value, to: dateTo.value };
+        }
+
+        function isValidDateRange(from, to) {
+            if (!from || !to) return false;
+            return new Date(from) <= new Date(to);
+        }
+
+        // ----- API: fetch securities list -----
+        async function fetchSecurities() {
+            try {
+                const url =
+                    'https://iss.moex.com/iss/engines/stock/markets/shares/boards/tqbr/securities.json?limit=250';
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const data = json.securities?.data || [];
+                // columns: SECID, SHORTNAME, SECNAME, ...
+                const idx = json.securities?.columns?.indexOf('SECID') ?? -1;
+                const nameIdx = json.securities?.columns?.indexOf('SHORTNAME') ?? -1;
+                const list = [];
+                for (const row of data) {
+                    if (idx >= 0 && row[idx]) {
+                        const ticker = row[idx];
+                        const name = nameIdx >= 0 ? row[nameIdx] : ticker;
+                        list.push({ ticker, name });
+                    }
+                }
+                // sort by ticker
+                list.sort((a, b) => a.ticker.localeCompare(b.ticker));
+                return list;
+            } catch (err) {
+                console.error('fetchSecurities error:', err);
+                return [];
+            }
+        }
+
+        // ----- API: fetch historical data -----
+        async function fetchHistorical(ticker, from, to) {
+            const url =
+                `https://iss.moex.com/iss/history/engines/stock/markets/shares/boards/tqbr/securities/${ticker}.json?from=${from}&to=${to}&limit=5000`;
+            try {
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const json = await resp.json();
+                const data = json.history?.data || [];
+                const cols = json.history?.columns || [];
+
+                const idxDate = cols.indexOf('TRADEDATE');
+                const idxOpen = cols.indexOf('OPEN');
+                const idxHigh = cols.indexOf('HIGH');
+                const idxLow = cols.indexOf('LOW');
+                const idxClose = cols.indexOf('CLOSE');
+                const idxVolume = cols.indexOf('VOLUME');
+
+                const result = [];
+                for (const row of data) {
+                    const date = idxDate >= 0 ? row[idxDate] : null;
+                    const open = idxOpen >= 0 ? parseFloat(row[idxOpen]) : null;
+                    const high = idxHigh >= 0 ? parseFloat(row[idxHigh]) : null;
+                    const low = idxLow >= 0 ? parseFloat(row[idxLow]) : null;
+                    const close = idxClose >= 0 ? parseFloat(row[idxClose]) : null;
+                    const volume = idxVolume >= 0 ? parseFloat(row[idxVolume]) : null;
+                    if (date && close !== null && !isNaN(close)) {
+                        result.push({
+                            date: date,
+                            open: open || close,
+                            high: high || close,
+                            low: low || close,
+                            close: close,
+                            volume: volume || 0,
+                        });
+                    }
+                }
+                // sort by date ascending
+                result.sort((a, b) => a.date.localeCompare(b.date));
+                return result;
+            } catch (err) {
+                console.error('fetchHistorical error:', err);
+                throw err;
+            }
+        }
+
+        // ----- render chart -----
+        function renderChart(data) {
+            if (!chart) {
+                chart = echarts.init(document.getElementById('chart'), 'dark');
+                window.addEventListener('resize', () => chart && chart.resize());
+            }
+
+            if (!data || data.length === 0) {
+                chart.setOption({
+                    title: { text: 'Нет данных для отображения', left: 'center', top: 'center',
+                    textStyle: { color: '#6a7a9a', fontSize: 16, fontWeight: 400 } },
+                    xAxis: { show: false },
+                    yAxis: { show: false },
+                    series: [],
+                }, true);
+                return;
+            }
+
+            const dates = data.map(d => d.date);
+            const ohlc = data.map(d => [d.open, d.close, d.low, d.high]);
+            const volumes = data.map(d => d.volume);
+
+            // Compute MA(7) and MA(30)
+            const ma7 = [];
+            const ma30 = [];
+            for (let i = 0; i < data.length; i++) {
+                let sum7 = 0,
+                    sum30 = 0;
+                let c7 = 0,
+                    c30 = 0;
+                for (let j = Math.max(0, i - 6); j <= i; j++) { sum7 += data[j].close;
+                    c7++; }
+                for (let j = Math.max(0, i - 29); j <= i; j++) { sum30 += data[j].close;
+                    c30++; }
+                ma7.push(c7 ? sum7 / c7 : null);
+                ma30.push(c30 ? sum30 / c30 : null);
+            }
+
+            const option = {
+                backgroundColor: 'transparent',
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' },
+                    borderColor: '#2a3a55',
+                    backgroundColor: 'rgba(17,25,39,0.92)',
+                    borderWidth: 1,
+                    textStyle: { color: '#e8edf5', fontSize: 13 },
+                    formatter: function(params) {
+                        const idx = params[0]?.dataIndex;
+                        if (idx === undefined || !data[idx]) return '';
+                        const d = data[idx];
+                        let html =
+                            `<b>${d.date}</b><br/>Открытие: ${numberFormat(d.open, 2)}<br/>Макс: ${numberFormat(d.high, 2)}<br/>Мин: ${numberFormat(d.low, 2)}<br/>Закрытие: <b>${numberFormat(d.close, 2)}</b><br/>Объём: ${formatVolume(d.volume)}`;
+                        return html;
+                    }
+                },
+                axisPointer: {
+                    link: [{ xAxisIndex: 'all' }],
+                    label: {
+                        backgroundColor: '#1a2a44',
+                        borderColor: '#2a3a55',
+                        color: '#e8edf5',
+                    }
+                },
+                grid: [{
+                    left: '6%',
+                    right: '4%',
+                    top: '6%',
+                    height: '62%',
+                }, {
+                    left: '6%',
+                    right: '4%',
+                    top: '76%',
+                    height: '16%',
+                }],
+                xAxis: [{
+                    type: 'category',
+                    data: dates,
+                    gridIndex: 0,
+                    boundaryGap: true,
+                    axisLine: { lineStyle: { color: '#1e2d45' } },
+                    axisLabel: {
+                        color: '#6a7a9a',
+                        fontSize: 11,
+                        rotate: data.length > 60 ? 30 : 0,
+                        interval: Math.max(1, Math.floor(data.length / 60)),
+                    },
+                    splitLine: { show: false },
+                    axisTick: { show: false },
+                }, {
+                    type: 'category',
+                    data: dates,
+                    gridIndex: 1,
+                    boundaryGap: true,
+                    axisLine: { lineStyle: { color: '#1e2d45' } },
+                    axisLabel: { show: false },
+                    splitLine: { show: false },
+                    axisTick: { show: false },
+                }],
+                yAxis: [{
+                    type: 'value',
+                    gridIndex: 0,
+                    scale: true,
+                    splitLine: {
+                        lineStyle: { color: '#1a2538', type: 'dashed' }
+                    },
+                    axisLabel: {
+                        color: '#6a7a9a',
+                        fontSize: 11,
+                        formatter: (v) => numberFormat(v, 2),
+                    },
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                }, {
+                    type: 'value',
+                    gridIndex: 1,
+                    scale: true,
+                    splitLine: {
+                        lineStyle: { color: '#1a2538', type: 'dashed' }
+                    },
+                    axisLabel: {
+                        color: '#6a7a9a',
+                        fontSize: 11,
+                        formatter: (v) => formatVolume(v),
+                    },
+                    axisLine: { show: false },
+                    axisTick: { show: false },
+                }],
+                dataZoom: [{
+                    type: 'inside',
+                    xAxisIndex: [0, 1],
+                    start: 0,
+                    end: 100,
+                    minSpan: 5,
+                }, {
+                    type: 'slider',
+                    xAxisIndex: [0, 1],
+                    start: 0,
+                    end: 100,
+                    height: 16,
+                    bottom: 2,
+                    borderColor: '#1e2d45',
+                    backgroundColor: 'rgba(17,25,39,0.6)',
+                    fillerColor: 'rgba(41,182,246,0.15)',
+                    handleStyle: { color: '#29b6f6' },
+                    textStyle: { color: '#6a7a9a', fontSize: 10 },
+                }],
+                series: [{
+                    name: 'Свечи',
+                    type: 'candlestick',
+                    data: ohlc,
+                    xAxisIndex: 0,
+                    yAxisIndex: 0,
+                    itemStyle: {
+                        color: '#66d99b',
+                        color0: '#f86666',
+                        borderColor: '#66d99b',
+                        borderColor0: '#f86666',
+                        borderWidth: 1,
+                    },
+                    barWidth: '50%',
+                    markLine: {
+                        silent: true,
+                        symbol: 'none',
+                        lineStyle: { color: '#6a7a9a', type: 'dashed', width: 1 },
+                        data: [{
+                            type: 'average',
+                            name: 'Средняя',
+                            label: {
+                                formatter: (p) => 'Сред: ' + numberFormat(p.value, 2),
+                                color: '#8899bb',
+                                fontSize: 11,
+                                fontWeight: 400,
+                            }
+                        }]
+                    }
+                }, {
+                    name: 'MA(7)',
+                    type: 'line',
+                    data: ma7,
+                    xAxisIndex: 0,
+                    yAxisIndex: 0,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { color: '#f0b866', width: 1.5, opacity: 0.7 },
+                    z: 5,
+                }, {
+                    name: 'MA(30)',
+                    type: 'line',
+                    data: ma30,
+                    xAxisIndex: 0,
+                    yAxisIndex: 0,
+                    smooth: true,
+                    symbol: 'none',
+                    lineStyle: { color: '#4fc3f7', width: 1.5, opacity: 0.6 },
+                    z: 4,
+                }, {
+                    name: 'Объём',
+                    type: 'bar',
+                    data: volumes,
+                    xAxisIndex: 1,
+                    yAxisIndex: 1,
+                    barWidth: '60%',
+                    itemStyle: {
+                        color: function(params) {
+                            const idx = params.dataIndex;
+                            if (idx === undefined || !data[idx]) return '#2a3a55';
+                            const d = data[idx];
+                            return d.close >= d.open ? '#66d99b' : '#f86666';
+                        },
+                        opacity: 0.6,
+                        borderWidth: 0,
+                    },
+                    z: 2,
+                }],
+                legend: {
+                    data: ['Свечи', 'MA(7)', 'MA(30)', 'Объём'],
+                    textStyle: { color: '#8899bb', fontSize: 12 },
+                    icon: 'roundRect',
+                    itemWidth: 16,
+                    itemHeight: 6,
+                    bottom: 28,
+                    left: 'center',
+                    itemGap: 20,
+                },
+                animation: true,
+                animationDuration: 500,
+                animationEasing: 'cubicOut',
+            };
+
+            chart.setOption(option, true);
+            chart.resize();
+
+            // update stats
+            updateStats(data);
+        }
+
+        // ----- update stats -----
+        function updateStats(data) {
+            if (!data || data.length === 0) {
+                sLast.textContent = '—';
+                sChange.textContent = '—';
+                sHigh.textContent = '—';
+                sLow.textContent = '—';
+                sVolume.textContent = '—';
+                sAvgVolume.textContent = '—';
+                return;
+            }
+
+            const last = data[data.length - 1];
+            const first = data[0];
+            const close = last.close;
+            const open = first.open;
+            const change = close - open;
+            const changePct = open !== 0 ? (change / open) * 100 : 0;
+
+            let high = -Infinity,
+                low = Infinity,
+                totalVol = 0;
+            for (const d of data) {
+                if (d.high > high) high = d.high;
+                if (d.low < low) low = d.low;
+                totalVol += d.volume;
+            }
+            const avgVol = data.length > 0 ? totalVol / data.length : 0;
+
+            sLast.textContent = numberFormat(close, 2) + ' ₽';
+            sChange.textContent = (change >= 0 ? '+' : '') + numberFormat(change, 2) +
+                ' (' + (changePct >= 0 ? '+' : '') + numberFormat(changePct, 2) + '%)';
+            sChange.className = 'value ' + (change >= 0 ? 'positive' : 'negative');
+
+            sHigh.textContent = numberFormat(high, 2) + ' ₽';
+            sLow.textContent = numberFormat(low, 2) + ' ₽';
+            sVolume.textContent = formatVolume(totalVol);
+            sAvgVolume.textContent = formatVolume(avgVol);
+        }
+
+        // ----- load data for ticker -----
+        async function loadData(ticker, from, to) {
+            if (isFetching) return;
+            if (!ticker) return;
+            if (!isValidDateRange(from, to)) {
+                // fallback to 30 days
+                const range = getDateRange(30);
+                from = range.from;
+                to = range.to;
+                setDateInputs(from, to);
+            }
+
+            setLoading(true);
+            try {
+                const data = await fetchHistorical(ticker, from, to);
+                currentData = data;
+                currentTicker = ticker;
+                renderChart(data);
+                const now = new Date();
+                updateTime.textContent = '🕒 ' + now.toLocaleString('ru-RU');
+                setStatus('● онлайн', '');
+            } catch (err) {
+                console.error('loadData error:', err);
+                setStatus('⚠ ошибка', 'error');
+                currentData = [];
+                renderChart([]);
+                sLast.textContent = '—';
+                sChange.textContent = '—';
+                sHigh.textContent = '—';
+                sLow.textContent = '—';
+                sVolume.textContent = '—';
+                sAvgVolume.textContent = '—';
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // ----- populate stock dropdown -----
+        function populateSelect(list) {
+            stockSelect.innerHTML = '';
+            if (!list || list.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Нет данных';
+                stockSelect.appendChild(opt);
+                return;
+            }
+            for (const item of list) {
+                const opt = document.createElement('option');
+                opt.value = item.ticker;
+                opt.textContent = `${item.ticker} — ${item.name}`;
+                stockSelect.appendChild(opt);
+            }
+            // set default
+            const defaultTicker = 'SBER';
+            if (list.some(x => x.ticker === defaultTicker)) {
+                stockSelect.value = defaultTicker;
+                currentTicker = defaultTicker;
+            } else if (list.length > 0) {
+                stockSelect.value = list[0].ticker;
+                currentTicker = list[0].ticker;
+            }
+        }
+
+        // ----- init securities -----
+        async function initSecurities() {
+            try {
+                const list = await fetchSecurities();
+                securitiesList = list;
+                populateSelect(list);
+                // load default
+                const ticker = stockSelect.value || 'SBER';
+                const range = getDateRange(30);
+                setDateInputs(range.from, range.to);
+                await loadData(ticker, range.from, range.to);
+            } catch (err) {
+                console.error('initSecurities error:', err);
+                setStatus('⚠ ошибка загрузки списка', 'error');
+                stockSelect.innerHTML = '<option value="">Ошибка</option>';
+            }
+        }
+
+        // ----- event: preset buttons -----
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                presetBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const days = parseInt(this.dataset.days, 10);
+                const range = getDateRange(days);
+                setDateInputs(range.from, range.to);
+                const ticker = stockSelect.value;
+                if (ticker) {
+                    loadData(ticker, range.from, range.to);
+                }
+            });
+        });
+
+        // ----- event: update button -----
+        updateBtn.addEventListener('click', function() {
+            const ticker = stockSelect.value;
+            if (!ticker) return;
+            const { from, to } = getSelectedDates();
+            if (!isValidDateRange(from, to)) {
+                alert('Пожалуйста, выберите корректный диапазон дат.');
+                return;
+            }
+            // deactivate preset buttons
+            presetBtns.forEach(b => b.classList.remove('active'));
+            loadData(ticker, from, to);
+        });
+
+        // ----- event: stock change -----
+        stockSelect.addEventListener('change', function() {
+            const ticker = this.value;
+            if (!ticker) return;
+            const { from, to } = getSelectedDates();
+            if (isValidDateRange(from, to)) {
+                loadData(ticker, from, to);
+            } else {
+                const range = getDateRange(30);
+                setDateInputs(range.from, range.to);
+                loadData(ticker, range.from, range.to);
+            }
+        });
+
+        // ----- event: Enter key on date inputs -----
+        dateFrom.addEventListener('keydown', (e) => { if (e.key === 'Enter') updateBtn.click(); });
+        dateTo.addEventListener('keydown', (e) => { if (e.key === 'Enter') updateBtn.click(); });
+
+        // ----- resize -----
+        window.addEventListener('resize', () => {
+            if (chart) chart.resize();
+        });
+
+        // ----- start -----
+        initSecurities();
+    </script>
+
+</body>
+</html>
